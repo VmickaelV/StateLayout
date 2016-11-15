@@ -16,17 +16,23 @@
 
 package com.objectlife.statelayout;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.res.TypedArray;
+import android.os.Build;
+import android.support.annotation.CheckResult;
+import android.support.annotation.IdRes;
 import android.support.annotation.IntDef;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- *
  * A subclass of FrameLayout that can display different state of view.like contentView, emptyView,
  * errorView and loadingView. you can set state view by {@link #setContentView(View)} or {@link #setLoadingViewResId(int)},
  * and you can switch state by call {@link #setState(int)}.
@@ -61,6 +67,49 @@ public class StateLayout extends FrameLayout {
 
     public StateLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+	    TypedArray a = context.obtainStyledAttributes(attrs,
+			    R.styleable.slStateLayout, 0, 0);
+	    defViewState = a.getInt(R.styleable.slStateLayout_slInitState, defViewState);
+        a.recycle();
+    }
+
+	@Override
+	public void addView(View child, int index, ViewGroup.LayoutParams params) {
+		super.addView(child, index, params);
+
+        LayoutParams that = (LayoutParams) params;
+
+        switch (that.slState) {
+            case VIEW_CONTENT:
+                mContentView = child;
+                break;
+            case VIEW_EMPTY:
+                mEmptyView = child;
+                break;
+            case VIEW_ERROR:
+                mErrorView = child;
+                break;
+            case VIEW_LOADING:
+                mLoadingView = child;
+                break;
+        }
+
+        child.setVisibility(that.slState == defViewState ? VISIBLE : GONE);
+	}
+
+    @Override
+    protected FrameLayout.LayoutParams generateDefaultLayoutParams() {
+        return super.generateDefaultLayoutParams();
+    }
+
+    @Override
+    public FrameLayout.LayoutParams generateLayoutParams(AttributeSet attrs) {
+        return new LayoutParams(getContext(), attrs);
+    }
+
+    @Override
+    protected ViewGroup.LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
+        return new LayoutParams(p);
     }
 
     /**
@@ -79,8 +128,11 @@ public class StateLayout extends FrameLayout {
      * @param viewResId The id to specify
      * @return This StateLayout object to allow for chaining of calls to set methods
      */
-    public StateLayout setContentViewResId(int viewResId) {
+    public StateLayout setContentViewResId(@IdRes int viewResId) {
         mContentView = findViewById(viewResId);
+	    if (mContentView != null && defViewState != VIEW_CONTENT) {
+		    mContentView.setVisibility(GONE);
+	    }
         return this;
     }
 
@@ -100,8 +152,11 @@ public class StateLayout extends FrameLayout {
      * @param viewResId The id to specify
      * @return This StateLayout object to allow for chaining of calls to set methods
      */
-    public StateLayout setEmptyViewResId(int viewResId) {
+    public StateLayout setEmptyViewResId(@IdRes int viewResId) {
         mEmptyView = findViewById(viewResId);
+	    if (mEmptyView != null && defViewState != VIEW_EMPTY) {
+		    mEmptyView.setVisibility(GONE);
+	    }
         return this;
     }
 
@@ -121,8 +176,11 @@ public class StateLayout extends FrameLayout {
      * @param viewResId The id to specify
      * @return This StateLayout object to allow for chaining of calls to set methods
      */
-    public StateLayout setErrorViewResId(int viewResId) {
+    public StateLayout setErrorViewResId(@IdRes int viewResId) {
         mErrorView = findViewById(viewResId);
+	    if (mErrorView != null && defViewState != VIEW_ERROR) {
+		    mErrorView.setVisibility(GONE);
+	    }
         return this;
     }
 
@@ -142,8 +200,11 @@ public class StateLayout extends FrameLayout {
      * @param viewResId The id to specify
      * @return This StateLayout object to allow for chaining of calls to set methods
      */
-    public StateLayout setLoadingViewResId(int viewResId) {
+    public StateLayout setLoadingViewResId(@IdRes int viewResId) {
         mLoadingView = findViewById(viewResId);
+	    if (mLoadingView != null && defViewState != VIEW_LOADING) {
+		    mLoadingView.setVisibility(GONE);
+	    }
         return this;
     }
 
@@ -163,7 +224,6 @@ public class StateLayout extends FrameLayout {
             setState(state);
         }
     }
-
 
     public void setState(@ViewState int state) {
         if (defViewState == state) {
@@ -194,6 +254,7 @@ public class StateLayout extends FrameLayout {
      *
      * @return One of {@link #VIEW_CONTENT},{@link #VIEW_EMPTY},{@link #VIEW_ERROR},{@link #VIEW_LOADING}
      */
+    @CheckResult
     public int getState(){
         return defViewState;
     }
@@ -242,6 +303,38 @@ public class StateLayout extends FrameLayout {
     private void hideView(View view) {
         if (view != null) {
             view.setVisibility(GONE);
+        }
+    }
+
+    public static class LayoutParams extends FrameLayout.LayoutParams {
+        private static final String TAG = "SL.LayoutParams";
+        @ViewState
+        public int slState = VIEW_LOADING;
+
+        public LayoutParams(int width, int height, int gravity, @ViewState int state) {
+            super(width, height, gravity);
+            slState = state;
+        }
+
+        public LayoutParams(int width, int height) {
+            super(width, height);
+        }
+
+        @TargetApi(Build.VERSION_CODES.KITKAT)
+        public LayoutParams(LayoutParams source) {
+            super(source);
+            slState = source.slState;
+        }
+
+        public LayoutParams(ViewGroup.LayoutParams source) {
+            super(source);
+        }
+
+        public LayoutParams(Context c, AttributeSet attrs) {
+            super(c, attrs);
+            TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.slStateLayout);
+            slState = a.getInt(R.styleable.slStateLayout_slState, -1);
+            a.recycle();
         }
     }
 
