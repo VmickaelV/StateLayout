@@ -25,12 +25,14 @@ import android.support.annotation.IdRes;
 import android.support.annotation.IntDef;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.zip.Inflater;
 
 /**
  * A subclass of FrameLayout that can display different state of view.like contentView, emptyView,
@@ -67,10 +69,46 @@ public class StateLayout extends FrameLayout {
 
     public StateLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-	    TypedArray a = context.obtainStyledAttributes(attrs,
-			    R.styleable.slStateLayout, 0, 0);
+	    TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.slStateLayout, 0, 0);
 	    defViewState = a.getInt(R.styleable.slStateLayout_slInitState, defViewState);
+
+        LayoutInflater layoutInflater = LayoutInflater.from(context);
+        int refLayout;
+
+        refLayout = a.getResourceId(R.styleable.slStateLayout_slContentStateViewLayout, 0);
+        if (refLayout > 0) {
+            layoutInflater.inflate(refLayout, this, true);
+            mContentView = this.getChildAt(this.getChildCount()-1);
+            ((LayoutParams) mContentView.getLayoutParams()).slState = VIEW_CONTENT;
+        }
+
+        refLayout = a.getResourceId(R.styleable.slStateLayout_slErrorStateViewLayout, 0);
+        if (refLayout > 0) {
+            layoutInflater.inflate(refLayout, this, true);
+            mErrorView = this.getChildAt(this.getChildCount()-1);
+            ((LayoutParams) mErrorView.getLayoutParams()).slState = VIEW_ERROR;
+        }
+
+        refLayout = a.getResourceId(R.styleable.slStateLayout_slEmptyStateViewLayout, 0);
+        if (refLayout > 0) {
+            layoutInflater.inflate(refLayout, this, true);
+            mEmptyView = this.getChildAt(this.getChildCount()-1);
+            ((LayoutParams) mEmptyView.getLayoutParams()).slState = VIEW_EMPTY;
+        }
+
+        refLayout = a.getResourceId(R.styleable.slStateLayout_slLoadingStateViewLayout, 0);
+        if (refLayout > 0) {
+            layoutInflater.inflate(refLayout, this, true);
+            mLoadingView = this.getChildAt(this.getChildCount()-1);
+            ((LayoutParams) mLoadingView.getLayoutParams()).slState = VIEW_LOADING;
+        }
+
         a.recycle();
+
+        // Code Hack
+        int t = defViewState;
+        setState(-1);
+        setState(t);
     }
 
 	@Override
@@ -99,7 +137,7 @@ public class StateLayout extends FrameLayout {
 
     @Override
     protected FrameLayout.LayoutParams generateDefaultLayoutParams() {
-        return super.generateDefaultLayoutParams();
+        return new LayoutParams(super.generateDefaultLayoutParams());
     }
 
     @Override
@@ -335,6 +373,13 @@ public class StateLayout extends FrameLayout {
             TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.slStateLayout);
             slState = a.getInt(R.styleable.slStateLayout_slState, -1);
             a.recycle();
+        }
+
+        @Override
+        public String toString() {
+            return "LayoutParams{" + super.toString() + ", " +
+                    "slState=" + slState +
+                    '}';
         }
     }
 

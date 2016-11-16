@@ -16,5 +16,10 @@
             <enum name="errorState" value="2"/>
             <enum name="loadingState" value="3"/>
         </attr>
+
+        <attr name="slContentStateViewLayout" format="reference"/>
+        <attr name="slErrorStateViewLayout" format="reference"/>
+        <attr name="slEmptyStateViewLayout" format="reference"/>
+        <attr name="slLoadingStateViewLayout" format="reference"/>
     </declare-styleable>
 </resources>
